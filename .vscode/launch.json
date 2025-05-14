@@ -1,0 +1,37 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "C:\\Users\\Niklas\\repos\\hpe-core\\example\\movenet\\moveEnet-dvxplorer.py",
+            "args": ["-visualise", "False", "-write_video", "data/cam2_S1_Directions/moveEnet14.mp4", "-input", "data/video14/ch0dvs/" ],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "console": "externalTerminal"
+        },
+        {
+            "name": "Python Debugger: Movenet DVXplorer",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "C:/Users/Niklas/repos/dvPose/moveEnet-dvxplorer.py",
+            "args": ["-visualise", "False", "-write_video", "data/cam2_S1_Directions/moveEnet14.mp4",
+            "-input", "hpe-core/example/movenet/data/aedat/davis/video10.aedat4" ,
+            "-ckpt", "C:/Users/Niklas/repos/hpe-core/example/movenet/models/e97_valacc0.81209.pth",
+            "-frame_width", "346",
+            "-frame_height", "260",
+         ],
+            "console": "integratedTerminal",
+        },
+        {
+            "name": "Python Debugger: movenet offline",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "C:\\Users\\Niklas\\repos\\hpe-core\\example\\movenet\\moveEnet-offline.py",
+            "args": ["-visualise", "True", "-write_video", "data/cam2_S1_Directions/moveEnet10.mp4", "-input", "example/movenet/data/video10/ch0dvs/" ],
+            "console": "integratedTerminal",
+        }
+    ]
+}
