@@ -11,6 +11,8 @@ import os
 import numpy as np
 import sys
 
+import torch
+
 import dv_processing as dv
 import time
 import datetime
@@ -59,8 +61,8 @@ def convertevents(eventStore):
 
 
 def process(eventstore):
-    # filter_chain.accept(eventstore)
-    # eventstore = filter_chain.generateEvents()
+    filter_chain.accept(eventstore)
+    eventstore = filter_chain.generateEvents()
     events = dict()
     starttime = time.time()
     events = convertevents(eventstore)
@@ -115,19 +117,11 @@ if __name__ == '__main__':
     #reader = dv.io.MonoCameraRecording(args.input)
 
 
+    if not torch.cuda.is_available():
+        print("No cuda available")
     
-    capture = dv.io.CameraCapture()
 
-    slicer = dv.EventStreamSlicer()
-    slicer.doEveryTimeInterval(datetime.timedelta(milliseconds=50), process)
 
-    filter_chain = dv.EventFilterChain()
-        # Filter refractory period
-    filter_chain.addFilter(dv.RefractoryPeriodFilter(capture.getEventResolution()))
-        # Only positive events
-    filter_chain.addFilter(dv.EventPolarityFilter(True))
-        # Remove noise
-    filter_chain.addFilter(dv.noise.BackgroundActivityNoiseFilter(capture.getEventResolution(), backgroundActivityDuration=timedelta(milliseconds=0.1)))
 
 
 
@@ -138,8 +132,25 @@ if __name__ == '__main__':
         args.stop = 100
 
     if args.input == None:
-        print('Please set input path')
-        exit()
+        print('Starting live feed')
+        capture = dv.io.CameraCapture()
+    else:
+        capture = dv.io.MonoCameraRecording(args.input)
+        input_data_dir = os.path.abspath(args.input)
+        print("=====", input_data_dir, "=====")
+        if not os.path.exists(input_data_dir):
+            print(input_data_dir, 'does not exist')
+        
+    slicer = dv.EventStreamSlicer()
+    slicer.doEveryTimeInterval(datetime.timedelta(milliseconds=20), process)
+
+    filter_chain = dv.EventFilterChain()
+        # Filter refractory period
+    filter_chain.addFilter(dv.RefractoryPeriodFilter(capture.getEventResolution(), timedelta(milliseconds=1)))
+        # Only positive events
+    #filter_chain.addFilter(dv.EventPolarityFilter(True))
+        # Remove noise
+    filter_chain.addFilter(dv.noise.BackgroundActivityNoiseFilter(capture.getEventResolution(), backgroundActivityDuration=timedelta(milliseconds=0.1)))
 
     init(cfg)
     model = MoveNet(num_classes=cfg["num_classes"],
@@ -149,15 +160,10 @@ if __name__ == '__main__':
     run_task.modelLoad(cfg['ckpt'])
 
 
-    input_data_dir = os.path.abspath(args.input)
 
-    print("=====", input_data_dir, "=====")
-    if not os.path.exists(input_data_dir):
-        print(input_data_dir, 'does not exist')
-    else:
-        while capture.isRunning():
-            events = capture.getNextEventBatch()
-            if events is not None:
-                slicer.accept(events)
+    while capture.isRunning():
+        events = capture.getNextEventBatch()
+        if events is not None:
+            slicer.accept(events)
        #slicer
 
