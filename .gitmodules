@@ -1,0 +1,3 @@
+[submodule "hpe-core"]
+	path = hpe-core
+	url = https://github.com/event-driven-robotics/hpe-core.git
