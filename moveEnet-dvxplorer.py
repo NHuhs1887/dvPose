@@ -36,6 +36,9 @@ from pycore.moveenet.visualization.visualization import add_skeleton
 run_task = None
 model = None
 filter_chain = None
+visualizer = None
+accumulator = None
+rep = None
 
 
 
@@ -66,7 +69,8 @@ def process(eventstore):
     events = dict()
     starttime = time.time()
     events = convertevents(eventstore)
-    rep = get_representation(args.rep, args)
+    
+    rep.reset_frame()
     print('Time taken to convert: ', time.time()-starttime)
     
     starttime = time.time()
@@ -86,6 +90,34 @@ def process(eventstore):
 
     cv2.imshow('', frame)
     cv2.waitKey(1)
+
+    return
+
+# def accumulateAndProcess(eventstore):
+#     accumulator.accept(events)
+#     frame = accumulator.generateFrame()
+
+    
+#     #frame = cv2.GaussianBlur(frame, (args.gauss_kernel, args.gauss_kernel), 0)
+#     starttime = time.time()
+#     pre = run_task.predict_online(frame)
+#     print('Time taken to predict: ', time.time()-starttime)
+#     output = np.concatenate((pre['joints'].reshape([-1,2]), pre['confidence'].reshape([-1,1])), axis=1)
+
+#     frame = add_skeleton(frame, output, (0, 0, 255), True, normalised=False)
+
+#     cv2.imshow('', frame)
+#     cv2.waitKey(1)
+
+
+def preview(eventstore):
+    filter_chain.accept(eventstore)
+    eventstore = filter_chain.generateEvents()
+    frame = visualizer.generateImage(events)
+    cv2.imshow("Preview", frame)
+    cv2.waitKey(1)
+
+
 
     return
 
@@ -142,15 +174,32 @@ if __name__ == '__main__':
             print(input_data_dir, 'does not exist')
         
     slicer = dv.EventStreamSlicer()
-    slicer.doEveryTimeInterval(datetime.timedelta(milliseconds=20), process)
+    slicer.doEveryTimeInterval(datetime.timedelta(milliseconds=50), process)
 
     filter_chain = dv.EventFilterChain()
         # Filter refractory period
     filter_chain.addFilter(dv.RefractoryPeriodFilter(capture.getEventResolution(), timedelta(milliseconds=1)))
         # Only positive events
-    #filter_chain.addFilter(dv.EventPolarityFilter(True))
+    filter_chain.addFilter(dv.EventPolarityFilter(True))
         # Remove noise
-    filter_chain.addFilter(dv.noise.BackgroundActivityNoiseFilter(capture.getEventResolution(), backgroundActivityDuration=timedelta(milliseconds=0.1)))
+    filter_chain.addFilter(dv.noise.BackgroundActivityNoiseFilter(capture.getEventResolution(), backgroundActivityDuration=timedelta(milliseconds=1)))
+
+    visualizer = dv.visualization.EventVisualizer(capture.getEventResolution())
+
+    accumulator = dv.Accumulator(capture.getEventResolution())
+
+    # Apply configuration, these values can be modified to taste
+    accumulator.setMinPotential(0.0)
+    accumulator.setMaxPotential(1.0)
+    accumulator.setNeutralPotential(0.5)
+    accumulator.setEventContribution(0.15)
+    accumulator.setDecayFunction(dv.Accumulator.Decay.EXPONENTIAL)
+    accumulator.setDecayParam(1e+6)
+    accumulator.setIgnorePolarity(False)
+    accumulator.setSynchronousDecay(False)
+
+    rep = get_representation(args.rep, args)
+
 
     init(cfg)
     model = MoveNet(num_classes=cfg["num_classes"],

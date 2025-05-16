@@ -19,9 +19,9 @@
             "program": "moveEnet-dvxplorer.py",
             "args": ["-visualise", "False", "-write_video", "data/cam2_S1_Directions/moveEnet14.mp4",
             "-ckpt", "hpe-core/example/movenet/models/e97_valacc0.81209.pth",
-            "-frame_width", "640",
-            "-frame_height", "480",
-            "-rep", "eros"
+            "-frame_width", "394",
+            "-frame_height", "260",
+            "-rep", "eros",
          ],
             "console": "integratedTerminal",
         },
